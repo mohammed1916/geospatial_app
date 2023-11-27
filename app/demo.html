@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+  <title>RouteOpt</title>
+  <link rel="stylesheet" type="text/css" href="https://js.api.here.com/v3/3.1/mapsjs-ui.css" />
+  <link rel="stylesheet" type="text/css" href="demo.css" />
+  <link rel="stylesheet" type="text/css" href="styles.css" />
+  <link rel="stylesheet" type="text/css" href="../template.css" />
+  <script type="text/javascript" src='../test-credentials.js'></script>
+  <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-core.js"></script>
+  <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-service.js"></script>
+  <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-ui.js"></script>
+  <script type="text/javascript" src="https://js.api.here.com/v3/3.1/mapsjs-mapevents.js"></script>
+</head>
+
+<body id="geocode">
+  <script type="module">
+    // Import the functions you need from the SDKs you need
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-analytics.js";
+    // TODO: Add SDKs for Firebase products that you want to use
+    // https://firebase.google.com/docs/web/setup#available-libraries
+
+    // Your web app's Firebase configuration
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3wae6ZSj7TSk1H93kvysUp8bTGetdBh4",
+      authDomain: "geospatialroute.firebaseapp.com",
+      projectId: "geospatialroute",
+      storageBucket: "geospatialroute.appspot.com",
+      messagingSenderId: "506176163790",
+      appId: "1:506176163790:web:6ca33f6ace74a48ee4259f",
+      measurementId: "G-DL11YZXFDJ"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(app);
+  </script>
+  <div class="page-header">
+    <h1>Geospacial APP: RouteOpt</h1>
+    <p>Request an optimal route from source to destination with avoidance roads.</p>
+  </div>
+  <div id="map"></div>
+  <div id="panel"></div>
+  <!-- Copyright notice -->
+  <div class="copyright">
+    &copy; Mohammed Abdullah 2023. All rights reserved.
+  </div>
+  <script type="text/javascript" src='demo.js'></script>
+</body>
+
+</html>
