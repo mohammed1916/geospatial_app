@@ -8,6 +8,8 @@
  *
  * @param   {H.service.Platform} platform    A stub class to access HERE services
  */
+// import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+
 function geocode(platform)
 {
   var geocoder = platform.getSearchService(),
@@ -36,7 +38,18 @@ function onSuccess(result)
    */
   addLocationsToMap(locations);
   addLocationsToPanel(locations);
+  log_data();
   // ... etc.
+}
+
+async function log_data()
+{
+  // Retrieve documents from Firestore collection "/userlocations"
+  const querySnapshot = await getDocs(collection(db, "userlocations/route"));
+  querySnapshot.forEach((doc) =>
+  {
+    console.log(doc.id, " => ", doc.data());
+  });
 }
 
 /**
