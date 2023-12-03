@@ -25,6 +25,17 @@
     <button id="srcButton" class="btn btn-primary">Set source</button>
     <button id="destButton" class="btn btn-primary">Set destination</button>
     <button id="confirmLocationButton" class="btn btn-primary">Confirm location</button>
+    <button id="navigateButton" class="btn btn-primary">Show Route</button>
+    <select id="transportModeSelect">
+      <option value="car">CAR</option>
+      <option value="truck">TRUCK</option>
+      <option value="pedestrian">PEDESTRIAN</option>
+      <option value="bicycle">BICYCLE</option>
+      <option value="scooter">SCOOTER</option>
+      <option value="taxi">TAXI</option>
+      <option value="bus">BUS</option>
+      <option value="privateBus">PRIVATE BUS</option>
+    </select>
   </div>
   <div id="map"></div>
 
@@ -432,10 +443,201 @@
         console.log("Location confirmation canceled");
       }
     }
+
+
+
+
+
+
+
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*-------------------------------------------------Calculate Route--------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+
+    /**
+ * A full list of available request parameters can be found in the Routing API documentation.
+ * see: https://www.here.com/docs/bundle/routing-api-v8-api-reference/page/index.html#tag/Routing/operation/calculateRoutes
+ */
+
+    var routes = new H.map.Group();
+
+
+    function calculateRoutes(platform, source, destination)
+    {
+      var source = source.latitude + "," + source.longitude;
+      var destination = destination.latitude + "," + destination.longitude;
+
+      const TransportMode = {
+        CAR: 'car',
+        TRUCK: 'truck',
+        PEDESTRIAN: 'pedestrian',
+        BICYCLE: 'bicycle',
+        SCOOTER: 'scooter',
+        TAXI: 'taxi',
+        BUS: 'bus',
+        PRIVATE_BUS: 'privateBus'
+      };
+
+      var routeRequestParams = {
+        routingMode: 'fast',
+        transportMode: 'scooter',
+        origin: source,
+        destination: destination,
+        // origin: '40.7249546323,-74.0110042', // Manhattan
+        // destination: '40.7324386599,-74.0341396', // Newport
+        return: 'polyline,travelSummary',
+        units: 'metric',
+        // spans: 'truckAttributes'
+      };
+
+      var router = platform.getRoutingService(null, 8);
+
+      // The blue route showing a simple truck route
+      calculateRoute(router, routeRequestParams, {
+        strokeColor: 'rgba(0, 128, 255, 0.7)',
+        lineWidth: 10
+      });
+
+      // The green route showing a truck route with a trailer
+      calculateRoute(router, Object.assign(
+        routeRequestParams,
+        // {
+        //   'truck[axleCount]': 4,
+        // }
+      ),
+        {
+          strokeColor: 'rgba(25, 150, 10, 0.7)',
+          lineWidth: 7
+        });
+
+      // The violet route showing a truck route with a trailer
+      calculateRoute(router, Object.assign(routeRequestParams,
+        // {
+        //   'truck[axleCount]': 5,
+        //   'truck[shippedHazardousGoods]': 'flammable'
+        // }
+      ), {
+        strokeColor: 'rgba(255, 0, 255, 0.7)',
+        lineWidth: 5
+      });
+    }
+
+    /**
+     * Calculates and displays a route.
+     * @param {Object} params The Routing API request parameters
+     * @param {H.service.RoutingService} router The service stub for requesting the Routing API
+     * @param {mapsjs.map.SpatialStyle.Options} style The style of the route to display on the map
+     */
+    function calculateRoute(router, params, style)
+    {
+      router.calculateRoute(params, function (result)
+      {
+        addRouteShapeToMap(style, result.routes[0]);
+      }, console.error);
+    }
+
+    /**
+     * Boilerplate map initialization code starts below:
+     */
+
+    // set up containers for the map  + panel
+    var mapContainer = document.getElementById('map');
+
+    // Step 1: initialize communication with the platform
+    // In your own code, replace variable window.apikey with your own apikey
+
+    var defaultLayers = platform.createDefaultLayers();
+
+    // Step 2: initialize a map - this map is centered over Berlin
+    // var map = new H.Map(mapContainer,
+    //   // Set truck restriction layer as a base map
+    //   defaultLayers.vector.normal.truck, {
+    //   center: { lat: 40.745390, lng: -74.022917 },
+    //   zoom: 13.2,
+    //   pixelRatio: window.devicePixelRatio || 1
+    // });
+
+    // add a resize listener to make sure that the map occupies the whole container
+    // window.addEventListener('resize', () => map.getViewPort().resize());
+
+    // Step 3: make the map interactive
+    // MapEvents enables the event system
+    // Behavior implements default interactions for pan/zoom (also on mobile touch environments)
+    // var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
+
+    map.addObject(routes);
+
+    /**
+     * Creates a H.map.Polyline from the shape of the route and adds it to the map.
+     * @param {Object} route A route as received from the H.service.RoutingService
+     */
+    function addRouteShapeToMap(style, route)
+    {
+      route.sections.forEach((section) =>
+      {
+        // decode LineString from the flexible polyline
+        let linestring = H.geo.LineString.fromFlexiblePolyline(section.polyline);
+
+        // Create a polyline to display the route:
+        let polyline = new H.map.Polyline(linestring, {
+          style: style
+        });
+
+        // Add the polyline to the map
+        routes.addObject(polyline);
+        // And zoom to its bounding rectangle
+        map.getViewModel().setLookAtData({
+          bounds: routes.getBoundingBox()
+        });
+      });
+    }
+
+
+    async function fetchLocations()
+    {
+      try
+      {
+        // Fetch source location
+        var sourceDocRef = doc(collection(db, "userlocation"), "source");
+        var sourceDocSnap = await getDoc(sourceDocRef);
+        var sourceLocation = sourceDocSnap.data().location;
+
+        // Fetch destination location
+        var destinationDocRef = doc(collection(db, "userlocation"), "destination");
+        var destinationDocSnap = await getDoc(destinationDocRef);
+        var destinationLocation = destinationDocSnap.data().location;
+
+        // console.log("Source Location:", sourceLocation);
+        // console.log("Destination Location:", destinationLocation);
+
+        return { source: sourceLocation, destination: destinationLocation };
+
+      } catch (error)
+      {
+        console.error("Error fetching locations from Firestore:", error);
+      }
+    }
+
+    // Call the fetchLocations function
+
+    async function navigate()
+    {
+      console.log("Navigating...");
+      await fetchLocations().
+        then((locations) =>
+        {
+          console.log("locations.source:", locations.source);
+          calculateRoutes(platform, locations.source, locations.destination);
+        });
+    }
+
     // document.getElementById("toggleButton").onclick = toggleGeocode;
     document.getElementById("srcButton").onclick = srcLocation;
     document.getElementById("destButton").onclick = destLocation;
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
+    document.getElementById("navigateButton").onclick = navigate;
 
 
   </script>
