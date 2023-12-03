@@ -22,8 +22,12 @@
   <div class="page-header">
     <h1>Geospacial APP: RouteOpt</h1>
     <p>Request an optimal route from source to destination with avoidance roads.</p>
+    <button id="srcButton" class="btn btn-primary">Set source</button>
+    <button id="destButton" class="btn btn-primary">Set destination</button>
+    <button id="confirmLocationButton" class="btn btn-primary">Confirm location</button>
   </div>
   <div id="map"></div>
+
   <div id="panel"></div>
   <!-- Copyright notice -->
   <div class="copyright">
@@ -34,7 +38,7 @@
     // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-analytics.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc, GeoPoint } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
     // TODO: Add SDKs for Firebase products that you want to use
     // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -54,6 +58,7 @@
     const app = initializeApp(firebaseConfig);
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
+    var fetched_locations = {};
     /**
    * Calculates and displays the address details of 200 S Mathilda Ave, Sunnyvale, CA
    * based on a free-form text
@@ -64,12 +69,13 @@
    *
    * @param   {H.service.Platform} platform    A stub class to access HERE services
    */
-    function geocode(platform)
+    function geocode(platform, loc)
     {
-      var geocoder = platform.getSearchService(),
-        geocodingParameters = {
-          q: 'Anna university, Chennai'
-        };
+      var geocoder = platform.getSearchService();
+      var geocodingParameters = {
+        q: 'Anna university, Chennai'
+        // q: loc
+      };
 
       geocoder.geocode(
         geocodingParameters,
@@ -170,20 +176,33 @@
       }
     }
 
-    async function storeInFirestore(address, position)
+    async function storeInFirestore(i, address, position)
     {
       // Check if the collection "userlocations/route" with the specified index exists
       var index = position.lat + "," + position.lng;
-      var collectionRef = collection(db, "userlocations/route", index);
-      var collectionSnapshot = await getDocs(collectionRef);
-      if (!collectionSnapshot.empty)
-      {
-        console.log("Collection already exists. Skipping insertion.");
-        return;
-      }
+      var collectionRef = collection(db, "userlocation");
+      var docRef = doc(collectionRef, "marker");
+      var docSnapshot = await getDoc(docRef);
+
+      // if (docSnapshot.exists())
+      // {
+      //   console.log("Document already exists. Deleting insertion.");
+      //   await deleteDoc(docRef);
+      //   return;
+      // }
+      // var collectionRef = collection(db, "userlocations/route", index);
+      // var collectionSnapshot = await getDocs(collectionRef);
+      // if (!collectionSnapshot.empty)
+      // {
+      //   console.log("Collection already exists. Skipping insertion.");
+      //   return;
+      // }
 
       // Store the content in Firestore
-      var docRef = doc(collection(db, "userlocations/route", index));
+      // current = isSrc ? "source" : "destination";
+
+      // var path = "userlocations/";
+      // var docRef = doc(collection(db, path));
 
       var firestore_content = {
         houseNumber: address.houseNumber,
@@ -198,8 +217,9 @@
           lng: position.lng
         }
       };
-      console.log(firestore_content);
-      await setDoc(docRef, firestore_content.position)
+      fetched_locations[index] = firestore_content;
+      console.log("fetched_locations", fetched_locations);
+      await setDoc(docRef, { [i]: firestore_content.position }, { merge: true })
         .then(function ()
         {
           console.log("Content stored in Firestore successfully!");
@@ -209,6 +229,23 @@
           console.error("Error storing content in Firestore: ", error);
         });
     };
+
+    function generateLocationContent(address, position)
+    {
+      var content = '';
+      content += '<strong>houseNumber:</strong> ' + address.houseNumber + '<br/>';
+      content += '<strong>street:</strong> ' + address.street + '<br/>';
+      content += '<strong>district:</strong> ' + address.district + '<br/>';
+      content += '<strong>city:</strong> ' + address.city + '<br/>';
+      content += '<strong>postalCode:</strong> ' + address.postalCode + '<br/>';
+      content += '<strong>county:</strong> ' + address.county + '<br/>';
+      content += '<strong>country:</strong> ' + address.countryName + '<br/>';
+      content += '<strong>position:</strong> ' +
+        Math.abs(position.lat.toFixed(4)) + ((position.lat > 0) ? 'N' : 'S') +
+        ' ' + Math.abs(position.lng.toFixed(4)) + ((position.lng > 0) ? 'E' : 'W') + '<br/>';
+
+      return content;
+    }
     /**
      * Creates a series of list items for each location found, and adds it to the panel.
      * @param {Object[]} locations An array of locations as received from the
@@ -217,43 +254,49 @@
     function addLocationsToPanel(locations)
     {
 
-      var nodeOL = document.createElement('ul'),
-        i;
+      var nodeOL = document.createElement('ul');
 
       nodeOL.style.fontSize = 'small';
       nodeOL.style.marginLeft = '5%';
       nodeOL.style.marginRight = '5%';
 
-      for (i = 0; i < locations.length; i += 1)
+      for (let i = 0; i < locations.length; i += 1)
       {
         let location = locations[i];
         var li = document.createElement('li'),
           divLabel = document.createElement('div'),
           button = document.createElement('button'),
           address = location.address,
-          access = location.access,
           content = '<strong style="font-size: large;">' + address.label + '</strong></br>';
         var position = location.position;
 
-        storeInFirestore(address, position);
+        storeInFirestore(i, address, position);
 
-        var content;
-        content += '<strong>houseNumber:</strong> ' + address.houseNumber + '<br/>';
-        content += '<strong>street:</strong> ' + address.street + '<br/>';
-        content += '<strong>district:</strong> ' + address.district + '<br/>';
-        content += '<strong>city:</strong> ' + address.city + '<br/>';
-        content += '<strong>postalCode:</strong> ' + address.postalCode + '<br/>';
-        content += '<strong>county:</strong> ' + address.county + '<br/>';
-        content += '<strong>country:</strong> ' + address.countryName + '<br/>';
-        content += '<strong>position:</strong> ' +
-          Math.abs(position.lat.toFixed(4)) + ((position.lat > 0) ? 'N' : 'S') +
-          ' ' + Math.abs(position.lng.toFixed(4)) + ((position.lng > 0) ? 'E' : 'W') + '<br/>';
-
+        content = generateLocationContent(address, position);
         divLabel.innerHTML = content;
         li.appendChild(divLabel);
+        var index = position.lat + "," + position.lng;
+        button.id = index;
         button.appendChild(li);
         button.addEventListener('click', function (evt)
         {
+          // var allButtons = document.querySelectorAll('[data-selected="true"]');
+          // allButtons.forEach(function (btn) {
+          //   btn.classList.remove('selected');
+          // });
+
+          // Remove 'selected' class from the previously selected button
+          let lastSelectedButton = document.querySelector('.selected');
+          if (lastSelectedButton)
+          {
+            console.log("lastSelectedButton:", lastSelectedButton.id);
+            lastSelectedButton.classList.remove('selected');
+            lastSelectedButton.dataset.selected = "false";
+          }
+
+          // Add 'selected' class to the clicked button
+          this.classList.add('selected');
+          // button.dataset.selected = "true";
           console.log(evt.target.innerHTML);
           console.log(location.position);
           map.setCenter(location.position);
@@ -262,7 +305,6 @@
 
         nodeOL.appendChild(button);
       }
-
       locationsContainer.appendChild(nodeOL);
     }
 
@@ -299,8 +341,96 @@
       map.setCenter(group.getBoundingBox().getCenter());
     }
 
-    // Now use the map as required...
-    geocode(platform);
+    // var geocodingEnabled = false;
+
+    // function toggleGeocode()
+    // {
+    //   // Get the toggle button element
+    //   var toggleButton = document.getElementById('toggleButton');
+
+    //   // Check if geocoding is currently enabled
+    //   if (geocodingEnabled)
+    //   {
+    //     // Disable geocoding
+    //     geocodingEnabled = false;
+    //     toggleButton.innerHTML = 'Enable Geocode';
+    //   } else
+    //   {
+    //     // Enable geocoding
+    //     geocodingEnabled = true;
+    //     toggleButton.innerHTML = 'Disable Geocode';
+    //     geocode(platform);
+    //   }
+    // }
+    var selected_location = ["source", "destination"];
+    var isSrc = 0;
+    function srcLocation()
+    {
+      isSrc = 0;
+      var src = prompt("Enter source location:");
+      geocode(platform, src);
+    }
+    function destLocation()
+    {
+      isSrc = 1;
+      var dest = prompt("Enter destination location:");
+      geocode(platform, dest);
+    }
+    async function confirmLocation()
+    {
+      var selectedButton = document.querySelector('.selected');
+      if (selectedButton)
+      {
+        // Button with class "selected" found, do something...
+        console.log("Selected location:", selectedButton.id);
+      } else
+      {
+        // Button with class "selected" not found
+        console.log("No location selected");
+        return;
+      }
+
+      var confirm_location = selectedButton.id;
+      var confirmation = confirm("Do you want to confirm this location?\n\n" + confirm_location);
+      if (confirm_location)
+      {
+        // User confirmed the location, do something...
+        console.log("Location confirmed:", confirm_location);
+        var index = confirm_location.split(",");
+        var L_position = {
+          lat: parseFloat(index[0]),
+          lng: parseFloat(index[1])
+        };
+        var geoPoint = new GeoPoint(L_position.lat, L_position.lng);
+
+
+        // Insert source location into Firestore
+        // var path = "userlocations/" + selected_location[isSrc];
+        console.log("selected_location[isSrc]:", selected_location[isSrc]);
+        var collectionRef = collection(db, "userlocation");
+        var docRef = doc(collectionRef, selected_location[isSrc]);
+
+        // var docRef = doc(collection(db, path, confirm_location));
+        await setDoc(docRef, { location: geoPoint }, { merge: true })
+          .then(function ()
+          {
+            console.log("location inserted into Firestore");
+          })
+          .catch(function (error)
+          {
+            console.error("Error inserting location into Firestore: ", error);
+          });
+      } else
+      {
+        // User canceled the location confirmation
+        console.log("Location confirmation canceled");
+      }
+    }
+    // document.getElementById("toggleButton").onclick = toggleGeocode;
+    document.getElementById("srcButton").onclick = srcLocation;
+    document.getElementById("destButton").onclick = destLocation;
+    document.getElementById("confirmLocationButton").onclick = confirmLocation;
+
 
   </script>
 </body>
