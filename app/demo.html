@@ -480,17 +480,23 @@
         PRIVATE_BUS: 'privateBus'
       };
 
-      var routeRequestParams = {
-        routingMode: 'fast',
-        transportMode: 'scooter',
-        origin: source,
-        destination: destination,
-        // origin: '40.7249546323,-74.0110042', // Manhattan
-        // destination: '40.7324386599,-74.0341396', // Newport
-        return: 'polyline,travelSummary',
-        units: 'metric',
-        // spans: 'truckAttributes'
-      };
+      var transportModeSelect = document.getElementById("transportModeSelect");
+      var selectedTransportMode = transportModeSelect.value;
+
+      if (selectedTransportMode === "")
+      {
+        alert("Please select a transport mode");
+      } else
+      {
+        var routeRequestParams = {
+          routingMode: 'fast',
+          transportMode: selectedTransportMode,
+          origin: source,
+          destination: destination,
+          return: 'polyline,travelSummary',
+          units: 'metric',
+        };
+      }
 
       var router = platform.getRoutingService(null, 8);
 
