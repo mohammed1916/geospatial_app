@@ -254,7 +254,13 @@
     function addLocationsToPanel(locations)
     {
 
+      var existingNodeOL = document.getElementById("response_list");
+      if (existingNodeOL)
+      {
+        existingNodeOL.remove();
+      }
       var nodeOL = document.createElement('ul');
+      nodeOL.id = "response_list";
 
       nodeOL.style.fontSize = 'small';
       nodeOL.style.marginLeft = '5%';
