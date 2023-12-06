@@ -26,7 +26,8 @@
     <button id="destButton" class="btn btn-primary">Set destination</button>
     <button id="confirmLocationButton" class="btn btn-primary">Confirm location</button>
     <button id="navigateButton" class="btn btn-primary">Show Route</button>
-    <button id="obstacleButton" class="btn btn-primary">Create Avoidance Area</button>
+    <button id="obstacleStartButton" class="btn btn-primary">Create Avoidance Area</button>
+    <button id="obstacleButton" class="btn btn-primary">Confirm Avoidance Area</button>
     <select id="transportModeSelect">
       <option value="car">CAR</option>
       <option value="truck">TRUCK</option>
@@ -465,13 +466,9 @@
      * @param  {H.Map} map      A HERE Map instance within the application
      */
     // Helper for logging events
-    var vertices = [
-      13.0082, 80.23497, 0,
-      13.0084, 80.23410, 0,
-      13.003, 80.2343, 0,
-    ];
+    var vertices = [];
     var logContainer;
-    var mainGroup;
+    // var mainGroup;
     // Step 4: create custom logging facilities
     function createLogContainer(map)
     {
@@ -500,8 +497,6 @@
     function setUpClickListener(map)
     {
       createLogContainer(map);
-      // Attach an event listener to map display
-      // obtain the coordinates and display in an alert box.
 
       map.addEventListener('tap', function (evt)
       {
@@ -510,9 +505,8 @@
         vertices.push(coord.lat, coord.lng, 0);
         console.log("vertices:", vertices);
         // removeObstacleAvoidanceRegion();
-        map.removeObject(mainGroup);
         // updateVerticePosition(coord, evt, false);
-        createResizablePolygon(map);
+        // createResizablePolygon(map);
         logEvent('Clicked at ' + Math.abs(coord.lat.toFixed(4)) +
           ((coord.lat > 0) ? 'N' : 'S') +
           ' ' + Math.abs(coord.lng.toFixed(4)) +
@@ -545,7 +539,10 @@
 
 
 
-
+    function startObstacleAvoidanceRegion()
+    {
+      setUpClickListener(map);
+    }
 
 
 
@@ -569,10 +566,10 @@
      *
      * @param {H.Map} map                      A HERE Map instance within the application
      */
-
+    var polygon;
     function createResizablePolygon(map)
     {
-      var polygon = new H.map.Polygon(
+      polygon = new H.map.Polygon(
         new H.geo.Polygon(new H.geo.LineString(vertices)),
         {
           style: { fillColor: 'rgba(150, 100, 0, .8)', lineWidth: 0 }
@@ -658,7 +655,7 @@
         evt.stopPropagation();
       }, true);
 
-      return mainGroup;
+      // return mainGroup;
     }
     function updateVerticePosition(geoPoint, evt, exists)
     {
@@ -668,20 +665,20 @@
       evt.target.setGeometry(geoPoint);
 
       // set new position for polygon's vertice
-      if (exists)
+      if (exists == true)
         geoLineString.removePoint(evt.target.getData()['verticeIndex']);
       geoLineString.insertPoint(evt.target.getData()['verticeIndex'], geoPoint);
       polygon.setGeometry(new H.geo.Polygon(geoLineString));
     }
-    function removeObstacleAvoidanceRegion()
-    {
-      map.removeObject(mainGroup);
-    }
+    // function removeObstacleAvoidanceRegion()
+    // {
+    //   map.removeObject(mainGroup);
+    // }
 
-    function createObstacleAvoidanceRegion()
-    {
-      createResizablePolygon(map);
-    }
+    // function createObstacleAvoidanceRegion()
+    // {
+    //   createResizablePolygon(map);
+    // }
 
     var isObstacleAvoidanceRegionVisible = false;
 
@@ -694,10 +691,13 @@
 
       // } else
       // {
-      mainGroup = createResizablePolygon(map);
+      createResizablePolygon(map);
+      // mainGroup = createResizablePolygon(map);
+
       // createObstacleAvoidanceRegion();
 
-      setUpClickListener(map);
+      // setUpClickListener(map);
+
       // }
       // isObstacleAvoidanceRegionVisible = !isObstacleAvoidanceRegionVisible;
     }
@@ -906,6 +906,7 @@
     document.getElementById("destButton").onclick = destLocation;
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
     document.getElementById("navigateButton").onclick = navigate;
+    document.getElementById("obstacleStartButton").onclick = startObstacleAvoidanceRegion;
     document.getElementById("obstacleButton").onclick = toggleObstacleAvoidanceRegion;
 
 
