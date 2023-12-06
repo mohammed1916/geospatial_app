@@ -26,6 +26,7 @@
     <button id="destButton" class="btn btn-primary">Set destination</button>
     <button id="confirmLocationButton" class="btn btn-primary">Confirm location</button>
     <button id="navigateButton" class="btn btn-primary">Show Route</button>
+    <button id="obstacleButton" class="btn btn-primary">Create Avoidance Area</button>
     <select id="transportModeSelect">
       <option value="car">CAR</option>
       <option value="truck">TRUCK</option>
@@ -452,6 +453,267 @@
 
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*-------------------------------------------------Clickable Nature Obstacle Avoidance------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+    /**
+     * An event listener is added to listen to tap events on the map.
+     * Clicking on the map displays an alert box containing the latitude and longitude
+     * of the location pressed.
+     * @param  {H.Map} map      A HERE Map instance within the application
+     */
+    // Helper for logging events
+    var vertices = [
+      13.0082, 80.23497, 0,
+      13.0084, 80.23410, 0,
+      13.003, 80.2343, 0,
+    ];
+    var logContainer;
+    var mainGroup;
+    // Step 4: create custom logging facilities
+    function createLogContainer(map)
+    {
+      logContainer = document.createElement('ul');
+      logContainer.id = 'log-container';
+      logContainer.className = 'log';
+      logContainer.innerHTML = '<li class="log-entry">Try clicking on the map</li>';
+      map.getElement().appendChild(logContainer);
+    }
+    function removeLogContainer(map)
+    {
+      logContainer = document.getElementById('log-container');
+      if (logContainer)
+      {
+        map.getElement().removeChild(logContainer);
+      }
+    }
+    function logEvent(str)
+    {
+      var entry = document.createElement('li');
+      entry.className = 'log-entry';
+      entry.textContent = str;
+      logContainer.insertBefore(entry, logContainer.firstChild);
+    }
+
+    function setUpClickListener(map)
+    {
+      createLogContainer(map);
+      // Attach an event listener to map display
+      // obtain the coordinates and display in an alert box.
+
+      map.addEventListener('tap', function (evt)
+      {
+        var coord = map.screenToGeo(evt.currentPointer.viewportX,
+          evt.currentPointer.viewportY);
+        vertices.push(coord.lat, coord.lng, 0);
+        console.log("vertices:", vertices);
+        // removeObstacleAvoidanceRegion();
+        map.removeObject(mainGroup);
+        // updateVerticePosition(coord, evt, false);
+        createResizablePolygon(map);
+        logEvent('Clicked at ' + Math.abs(coord.lat.toFixed(4)) +
+          ((coord.lat > 0) ? 'N' : 'S') +
+          ' ' + Math.abs(coord.lng.toFixed(4)) +
+          ((coord.lng > 0) ? 'E' : 'W'));
+      });
+    }
+
+    function removeClickListener()
+    {
+      // map.removeEventListener('tap');
+      removeLogContainer(map);
+    }
+
+
+
+
+    function undoLastLogEntry()
+    {
+      var logEntries = document.querySelectorAll('.log-entry');
+      if (logEntries.length > 0)
+      {
+        var lastLogEntry = logEntries[0];
+        vertices.pop();
+        lastLogEntry.parentNode.removeChild(lastLogEntry);
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*-------------------------------------------------Obstacle Avoidance------------------------------------------------------------------ */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+
+
+
+    /**
+     * Adds resizable geo polygon to map
+     *
+     * @param {H.Map} map                      A HERE Map instance within the application
+     */
+
+    function createResizablePolygon(map)
+    {
+      var polygon = new H.map.Polygon(
+        new H.geo.Polygon(new H.geo.LineString(vertices)),
+        {
+          style: { fillColor: 'rgba(150, 100, 0, .8)', lineWidth: 0 }
+        }
+      );
+      var verticeGroup = new H.map.Group({
+        visibility: false
+      });
+      var svgCircle = '<svg width="20" height="20" version="1.1" xmlns="http://www.w3.org/2000/svg">' +
+        '<circle cx="10" cy="10" r="7" fill="transparent" stroke="red" stroke-width="4"/>' +
+        '</svg>';
+      var mainGroup = new H.map.Group({
+        volatility: true, // mark the group as volatile for smooth dragging of all it's objects
+        objects: [polygon, verticeGroup]
+      });
+      var polygonTimeout;
+
+      // ensure that the polygon can receive drag events
+      polygon.draggable = true;
+
+      // create markers for each polygon's vertice which will be used for dragging
+      polygon.getGeometry().getExterior().eachLatLngAlt(function (lat, lng, alt, index)
+      {
+        var vertice = new H.map.Marker(
+          { lat, lng },
+          {
+            icon: new H.map.Icon(svgCircle, { anchor: { x: 10, y: 10 } })
+          }
+        );
+        vertice.draggable = true;
+        vertice.setData({ 'verticeIndex': index });
+        verticeGroup.addObject(vertice);
+      });
+      // add group with polygon and it's vertices (markers) on the map
+      map.addObject(mainGroup);
+
+      // event listener for main group to show markers if moved in with mouse (or touched on touch devices)
+      mainGroup.addEventListener('pointerenter', function (evt)
+      {
+        if (polygonTimeout)
+        {
+          clearTimeout(polygonTimeout);
+          polygonTimeout = null;
+        }
+
+        // show vertice markers
+        verticeGroup.setVisibility(true);
+      }, true);
+
+      // event listener for main group to hide vertice markers if moved out with mouse (or released finger on touch devices)
+      // the vertice markers are hidden on touch devices after specific timeout
+      mainGroup.addEventListener('pointerleave', function (evt)
+      {
+        var timeout = (evt.currentPointer.type == 'touch') ? 1000 : 0;
+
+        // hide vertice markers
+        polygonTimeout = setTimeout(function ()
+        {
+          verticeGroup.setVisibility(false);
+        }, timeout);
+      }, true);
+
+      // event listener for vertice markers group to change the cursor to pointer
+      verticeGroup.addEventListener('pointerenter', function (evt)
+      {
+        document.body.style.cursor = 'pointer';
+      }, true);
+
+      // event listener for vertice markers group to change the cursor to default
+      verticeGroup.addEventListener('pointerleave', function (evt)
+      {
+        document.body.style.cursor = 'default';
+      }, true);
+
+      // event listener for vertice markers group to resize the geo polygon object if dragging over markers
+      verticeGroup.addEventListener('drag', function (evt)
+      {
+        var pointer = evt.currentPointer;
+        var geoPoint = map.screenToGeo(pointer.viewportX, pointer.viewportY);
+        updateVerticePosition(geoPoint, evt, true);
+
+        // stop propagating the drag event, so the map doesn't move
+        evt.stopPropagation();
+      }, true);
+
+      return mainGroup;
+    }
+    function updateVerticePosition(geoPoint, evt, exists)
+    {
+      var geoLineString = polygon.getGeometry().getExterior();
+
+      // set new position for vertice marker
+      evt.target.setGeometry(geoPoint);
+
+      // set new position for polygon's vertice
+      if (exists)
+        geoLineString.removePoint(evt.target.getData()['verticeIndex']);
+      geoLineString.insertPoint(evt.target.getData()['verticeIndex'], geoPoint);
+      polygon.setGeometry(new H.geo.Polygon(geoLineString));
+    }
+    function removeObstacleAvoidanceRegion()
+    {
+      map.removeObject(mainGroup);
+    }
+
+    function createObstacleAvoidanceRegion()
+    {
+      createResizablePolygon(map);
+    }
+
+    var isObstacleAvoidanceRegionVisible = false;
+
+    function toggleObstacleAvoidanceRegion()
+    {
+      // if (isObstacleAvoidanceRegionVisible)
+      // {
+      // removeObstacleAvoidanceRegion();
+      // removeClickListener();
+
+      // } else
+      // {
+      mainGroup = createResizablePolygon(map);
+      // createObstacleAvoidanceRegion();
+
+      setUpClickListener(map);
+      // }
+      // isObstacleAvoidanceRegionVisible = !isObstacleAvoidanceRegionVisible;
+    }
+
+
+
+
+
+
+
+
+
+
+
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*-------------------------------------------------Calculate Route--------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
@@ -644,6 +906,7 @@
     document.getElementById("destButton").onclick = destLocation;
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
     document.getElementById("navigateButton").onclick = navigate;
+    document.getElementById("obstacleButton").onclick = toggleObstacleAvoidanceRegion;
 
 
   </script>
