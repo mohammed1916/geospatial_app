@@ -29,6 +29,7 @@
     <button id="obstacleStartButton" class="btn btn-primary">Create Avoidance Area</button>
     <button id="obstacleButton" class="btn btn-primary">Confirm Avoidance Area</button>
     <button id="addRectButton">Add Rectangle</button>
+    <button id="getWaypoints">Get Waypoints</button>
 
     <select id="transportModeSelect">
       <option value="car">CAR</option>
@@ -92,8 +93,8 @@
     {
       var geocoder = platform.getSearchService();
       var geocodingParameters = {
-        q: 'Anna university, Chennai'
-        // q: loc
+        // q: 'Anna university, Chennai'
+        q: loc
       };
 
       geocoder.geocode(
@@ -571,7 +572,8 @@
       currentGeoRect,
       objectTopLeftScreen,
       objectBottomRightScreen,
-      newGeoRect;
+      newGeoRect,
+      areas = [];
 
     // Add an event listener to the button
     document.getElementById('addRectButton').addEventListener('click', function ()
@@ -838,7 +840,6 @@
 
           // set the new bounding box for rect object
           rect.setBoundingBox(newGeoRect);
-          console.log("newGeoRect:", newGeoRect);
 
           // extract first point of the outline LineString and push it to the end, so the outline has a closed geometry
           outlineLinestring = rect.getGeometry().getExterior();
@@ -1063,6 +1064,53 @@
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
 
+    async function getWaypoints()
+    {
+      console.log("Getting Waypoints...");
+      await fetchLocationsFromFirebase().
+        then((locations) =>
+        {
+          console.log("locations.source:", locations.source);
+          console.log("locations.destination:", locations.destination);
+          // var source = locations.source.latitude + "," + locations.source.longitude;
+          var source = locations.source.longitude + "," + locations.source.latitude;
+          var destination = locations.destination.longitude + "," + locations.destination.latitude;
+          // var destination = locations.destination.latitude + "," + locations.destination.longitude;
+          // calculateRoutes(platform, locations.source, locations.destination);
+          fetch(`https://api.mapbox.com/directions/v5/mapbox/cycling/${source};${destination}?steps=true&access_token=pk.eyJ1IjoiY3VyaW91c2RldmVsb3BlciIsImEiOiJjbHBxeWxwMmEwNGIxMnJwOHBxcnljcm5uIn0.81dOxnYDrDAFuboiqrftDg`).then(function (response)
+          {
+            return response.json();
+          }).then(function (json)
+          {
+            console.log(json);
+          });
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*-------------------------------------------------Calculate Route--------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+
     /**
  * A full list of available request parameters can be found in the Routing API documentation.
  * see: https://www.here.com/docs/bundle/routing-api-v8-api-reference/page/index.html#tag/Routing/operation/calculateRoutes
@@ -1091,7 +1139,11 @@
       var transportModeSelect = document.getElementById("transportModeSelect");
       var selectedTransportMode = transportModeSelect.value;
 
-
+      if (newGeoRect == undefined)
+      {
+        alert("Please select a region to avoid");
+        return;
+      }
       const numericValues = Object.values(newGeoRect)
         .filter(value => typeof value === 'number')
         .map(value => value.toFixed(8)); // Adjust the precision as needed
@@ -1110,7 +1162,7 @@
           'transportMode': selectedTransportMode,
           'origin': source,
           'destination': destination,
-          'alternatives': 3,
+          'alternatives': 6,
           'avoid': {
             areas: { bbox: resultString }
           },
@@ -1151,10 +1203,33 @@
       //   strokeColor: 'rgba(0, 128, 255, 0.7)',
       //   lineWidth: 10
       // });
-      calculateRoute(router, routeRequestParams, {
-        strokeColor: 'rgba(0, 128, 255, 0.7)',
-        lineWidth: 10
-      });
+      var styles = [
+        { // blue
+          strokeColor: 'rgba(0, 128, 255, .5)',
+          lineWidth: 10
+        },
+        {// pink
+          strokeColor: 'rgba(255, 0, 255, .5)',
+          lineWidth: 7
+        },
+        {// green
+          strokeColor: 'rgba(25, 150, 10, 0.5)',
+          lineWidth: 5
+        },
+        {// Red
+          strokeColor: 'rgba(255, 0, 0, 0.7)',
+          lineWidth: 6
+        },
+        {// cyan
+          strokeColor: 'rgba(0, 255, 255, 0.7)',
+          lineWidth: 9
+        },
+        {// yellow
+          strokeColor: 'rgba(255, 255, 0, 0.7)',
+          lineWidth: 11
+        }
+      ];
+      calculateRoute(router, routeRequestParams, styles);
 
       // // The green route showing a truck route with a trailer
       // calculateRoute(router, Object.assign(
@@ -1193,7 +1268,7 @@
         {
           for (var i = 0; i < result.routes.length; i++)
           {
-            addRouteShapeToMap(style, result.routes[i]);
+            addRouteShapeToMap(style[i], result.routes[i]);
           }
         } else
         {
@@ -1229,7 +1304,7 @@
     }
 
 
-    async function fetchLocations()
+    async function fetchLocationsFromFirebase()
     {
       try
       {
@@ -1252,7 +1327,7 @@
     async function navigate()
     {
       console.log("Navigating...");
-      await fetchLocations().
+      await fetchLocationsFromFirebase().
         then((locations) =>
         {
           console.log("locations.source:", locations.source);
@@ -1268,6 +1343,7 @@
     document.getElementById("navigateButton").onclick = navigate;
     document.getElementById("obstacleStartButton").onclick = startObstacleAvoidanceRegion;
     document.getElementById("obstacleButton").onclick = toggleObstacleAvoidanceRegion;
+    document.getElementById("getWaypoints").onclick = getWaypoints;
 
 
   </script>
