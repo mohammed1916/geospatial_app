@@ -30,6 +30,16 @@
     <button id="obstacleButton" class="btn btn-primary">Confirm Avoidance Area</button>
     <button id="addRectButton">Add Rectangle</button>
     <button id="getWaypoints">Get Waypoints</button>
+    <select id="alternatives">
+      <option value="0">0</option>
+      <option value="1">1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
+
 
     <select id="transportModeSelect">
       <option value="car">CAR</option>
@@ -588,10 +598,10 @@
       // Set initial location near the center of the map
       var initialRect =
         new H.geo.Rect(
-          map.getCenter().lat - 0.01,
-          map.getCenter().lng - 0.01,
-          map.getCenter().lat + 0.01,
-          map.getCenter().lng + 0.01
+          map.getCenter().lat - 0.001,
+          map.getCenter().lng - 0.001,
+          map.getCenter().lat + 0.001,
+          map.getCenter().lng + 0.001
         );
 
       // ... (The rest of your existing code for creating the resizable rectangle)
@@ -858,6 +868,31 @@
         behavior.enable();
       }, true);
     }
+
+
+
+
+
+
+
+
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*-------------------------------------------------Add points------------------------------------------------------------------ */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+    /*------------------------------------------------------------------------------------------------------------------------------------- */
+
+    var points = [];
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1153,6 +1188,9 @@
 
       console.log("resultString", resultString);
 
+
+
+
       if (selectedTransportMode === "")
       {
         alert("Please select a transport mode");
@@ -1162,7 +1200,7 @@
           'transportMode': selectedTransportMode,
           'origin': source,
           'destination': destination,
-          'alternatives': 6,
+          'alternatives': document.getElementById("alternatives").value,
           'avoid': {
             areas: { bbox: resultString }
           },
@@ -1205,11 +1243,11 @@
       // });
       var styles = [
         { // blue
-          strokeColor: 'rgba(0, 128, 255, .5)',
+          strokeColor: 'rgba(0, 0, 0, .7)',
           lineWidth: 10
         },
         {// pink
-          strokeColor: 'rgba(255, 0, 255, .5)',
+          strokeColor: 'rgba(0, 255, 0, .7)',
           lineWidth: 7
         },
         {// green
@@ -1255,15 +1293,27 @@
       // });
     }
 
-
+    var routesDrawn = [];
     function calculateRoute(router, params, style)
     {
-      fetch(
-        `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`
-      ).then((result) =>
+      var url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+      if (document.getElementById("alternatives").value == 0)
+      {
+        url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+      }
+      fetch(url).then((result) =>
       { result = result.json(); return result; }).then((result) =>
       {
         console.log("result:", result);
+        if (routesDrawn.length > 0)
+        {
+          console.log("Removing outesDrawn:", routesDrawn);
+          for (var i = 0; i < routesDrawn.length; i++)
+          {
+            console.log("Removing outesDrawn:", i, routesDrawn[i]);
+            routes.removeObject(routesDrawn[i]);
+          }
+        }
         if (result && result.routes)
         {
           for (var i = 0; i < result.routes.length; i++)
@@ -1295,7 +1345,7 @@
           style: style
         });
         console.log("polyline", polyline);
-
+        routesDrawn.push(polyline);
         routes.addObject(polyline);
         map.getViewModel().setLookAtData({
           bounds: routes.getBoundingBox()
