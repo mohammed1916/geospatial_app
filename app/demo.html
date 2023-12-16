@@ -28,7 +28,8 @@
     <button id="navigateButton" class="btn btn-primary">Show Route</button>
     <!-- <button id="obstacleStartButton" class="btn btn-primary">Create Avoidance Area</button> -->
     <!-- <button id="obstacleButton" class="btn btn-primary">Confirm Avoidance Area</button> -->
-    <button id="addRectButton">Add Rectangle</button>
+    <button id="addRectButton">Add Bounds</button>
+    <button id="removeRectButton">Remove Bounds</button>
     <!-- <button id="getWaypoints">Get Waypoints</button> -->
     <select id="alternatives">
       <option value="0">0</option>
@@ -583,6 +584,7 @@
       objectTopLeftScreen,
       objectBottomRightScreen,
       newGeoRect,
+      RectGroups = [],
       areas = [];
 
     // Add an event listener to the button
@@ -610,6 +612,15 @@
       createResizableRect(map, behavior, initialRect);
     }
 
+    function removeRectGroups()
+    {
+      for (var i = 0; i < RectGroups.length; i++)
+      {
+        map.removeObject(RectGroups[i]);
+      }
+      RectGroups = [];
+    }
+
     function createResizableRect(map, behavior, initialRect)
     {
       var rect = new H.map.Rect(
@@ -634,6 +645,9 @@
           objects: [rect, rectOutline]
         }),
         rectTimeout;
+
+      RectGroups.push(rectGroup);
+
 
       // ensure that the objects can receive drag events
       rect.draggable = true;
@@ -836,7 +850,9 @@
 
           outlineLinestring = rect.getGeometry().getExterior();
           outlineLinestring.pushPoint(outlineLinestring.extractPoint(0));
+          // console.log("outlineLinestring:", outlineLinestring);
           rectOutline.setGeometry(outlineLinestring);
+          console.log("rectOutline:", rectOutline);
 
           evt.stopPropagation();
         }
@@ -1283,6 +1299,7 @@
     document.getElementById("destButton").onclick = destLocation;
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
     document.getElementById("navigateButton").onclick = navigate;
+    document.getElementById("removeRectButton").onclick = removeRectGroups;
 
 
   </script>
