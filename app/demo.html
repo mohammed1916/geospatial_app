@@ -166,7 +166,7 @@
     //Step 2: initialize a map - this map is centered over California
     var map = new H.Map(document.getElementById('map'),
       defaultLayers.vector.normal.map, {
-      center: { lat: 13.0348542, lng: 80.2121687 },
+      center: { lat: 13.0070665, lng: 80.2558377 },
       zoom: 15,
       pixelRatio: window.devicePixelRatio || 1
     });
@@ -619,6 +619,7 @@
         map.removeObject(RectGroups[i]);
       }
       RectGroups = [];
+      newGeoRect = undefined;
     }
 
     function createResizableRect(map, behavior, initialRect)
@@ -1205,10 +1206,18 @@
     var routesDrawn = [];
     function calculateRoute(router, params, style)
     {
-      var url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+      console.log("params.avoid.areas.bbox", params.avoid.areas.bbox);
+      // params.avoid.areas.bbox = "13.014199517385759,80.2429458332888,13.009590266432088,80.23951247036679";
+      params.avoid.areas.bbox = "13.0133557,80.2467978,13.0127298,80.2499788";
+      var url;
+      // var url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+      // if (document.getElementById("alternatives").value === 0)
+      // {
+      //   url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+      // }
       if (document.getElementById("alternatives").value == 0)
       {
-        url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
+        url = `https://router.hereapi.com/v8/routes?origin=52.522297,13.353296&destination=52.508309,13.355633&transportMode=car&avoid[areas]=bbox:13.37588,52.51061,13.34226,52.51892&apikey=${keys.HEREAPIkey}&return=polyline%2CtravelSummary`;
       }
       fetch(url).then((result) =>
       { result = result.json(); return result; }).then((result) =>
