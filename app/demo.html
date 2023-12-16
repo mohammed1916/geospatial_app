@@ -682,7 +682,6 @@
         document.body.style.cursor = 'default';
       }, true);
 
-      // event listener for rectangle group to change the cursor if mouse position is over the outline polyline (resizing is allowed)
       rectGroup.addEventListener('pointermove', function (evt)
       {
         var pointer = evt.currentPointer,
@@ -690,13 +689,11 @@
           objectBottomRightScreen = map.geoToScreen(evt.target.getGeometry().getBoundingBox().getBottomRight()),
           draggingType = '';
 
-        // only set cursor and draggingType if target is outline polyline
         if (evt.target != rectOutline)
         {
           return;
         }
 
-        // change document cursor depending on the mouse position
         if (pointer.viewportX < (objectTopLeftScreen.x + 4))
         {
           document.body.style.cursor = 'ew-resize'; // mouse position is at left side
@@ -745,8 +742,6 @@
         rectGroup.setData({ 'draggingType': draggingType });
       }, true);
 
-      // disable the map's behavior if resizing started so map doesn't pan in the situation
-      // when we try to set rect size to 0 or negative and mouse cursor leaves the map object
       rectGroup.addEventListener('dragstart', function (evt)
       {
         if (evt.target === rectOutline)
@@ -755,7 +750,6 @@
         }
       }, true);
 
-      // event listener for rect group to resize the geo rect object if dragging over outline polyline
       rectGroup.addEventListener('drag', function (evt)
       {
         pointer = evt.currentPointer,
@@ -764,18 +758,15 @@
           objectTopLeftScreen = map.geoToScreen(currentGeoRect.getTopLeft()),
           objectBottomRightScreen = map.geoToScreen(currentGeoRect.getBottomRight());
 
-        // if pointer is over outline, resize the geo rect object
         if (evt.target instanceof H.map.Polyline)
         {
           var currentTopLeft = currentGeoRect.getTopLeft(),
             currentBottomRight = currentGeoRect.getBottomRight(),
             outlineLinestring;
 
-          // update rect's size depending on dragging type:
           switch (rectGroup.getData()['draggingType'])
           {
             case 'left-top':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng >= currentBottomRight.lng || pointerGeoPoint.lat <= currentBottomRight.lat)
               {
                 return;
@@ -783,7 +774,6 @@
               newGeoRect = H.geo.Rect.fromPoints(pointerGeoPoint, currentGeoRect.getBottomRight());
               break;
             case 'left-bottom':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng >= currentBottomRight.lng || pointerGeoPoint.lat >= currentTopLeft.lat)
               {
                 return;
@@ -793,7 +783,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentTopLeft, currentBottomRight);
               break;
             case 'right-top':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng <= currentTopLeft.lng || pointerGeoPoint.lat <= currentBottomRight.lat)
               {
                 return;
@@ -803,7 +792,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentTopLeft, currentBottomRight);
               break;
             case 'right-bottom':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng <= currentTopLeft.lng || pointerGeoPoint.lat >= currentTopLeft.lat)
               {
                 return;
@@ -811,7 +799,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentGeoRect.getTopLeft(), pointerGeoPoint);
               break;
             case 'left':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng >= currentBottomRight.lng)
               {
                 return;
@@ -820,7 +807,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentTopLeft, currentGeoRect.getBottomRight());
               break;
             case 'right':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lng <= currentTopLeft.lng)
               {
                 return;
@@ -829,7 +815,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentGeoRect.getTopLeft(), currentBottomRight);
               break;
             case 'top':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lat <= currentBottomRight.lat)
               {
                 return;
@@ -838,7 +823,6 @@
               newGeoRect = H.geo.Rect.fromPoints(currentTopLeft, currentGeoRect.getBottomRight());
               break;
             case 'bottom':
-              // we don't allow resizing to 0 or to negative values
               if (pointerGeoPoint.lat >= currentTopLeft.lat)
               {
                 return;
@@ -848,23 +832,18 @@
               break;
           }
 
-          // set the new bounding box for rect object
           rect.setBoundingBox(newGeoRect);
 
-          // extract first point of the outline LineString and push it to the end, so the outline has a closed geometry
           outlineLinestring = rect.getGeometry().getExterior();
           outlineLinestring.pushPoint(outlineLinestring.extractPoint(0));
           rectOutline.setGeometry(outlineLinestring);
 
-          // prevent event from bubling, so map doesn't receive this event and doesn't pan
           evt.stopPropagation();
         }
       }, true);
 
-      // event listener for rect group to enable map's behavior
       rectGroup.addEventListener('dragend', function (evt)
       {
-        // enable behavior
         behavior.enable();
       }, true);
     }
@@ -906,14 +885,6 @@
     /*-------------------------------------------------Obstacle Avoidance------------------------------------------------------------------ */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
-
-
-
-    /**
-     * Adds resizable geo polygon to map
-     *
-     * @param {H.Map} map                      A HERE Map instance within the application
-     */
     var polygon;
     function createResizablePolygon(map)
     {
@@ -930,15 +901,13 @@
         '<circle cx="10" cy="10" r="7" fill="transparent" stroke="red" stroke-width="4"/>' +
         '</svg>';
       var mainGroup = new H.map.Group({
-        volatility: true, // mark the group as volatile for smooth dragging of all it's objects
+        volatility: true,
         objects: [polygon, verticeGroup]
       });
       var polygonTimeout;
 
-      // ensure that the polygon can receive drag events
       polygon.draggable = true;
 
-      // create markers for each polygon's vertice which will be used for dragging
       polygon.getGeometry().getExterior().eachLatLngAlt(function (lat, lng, alt, index)
       {
         var vertice = new H.map.Marker(
@@ -951,10 +920,8 @@
         vertice.setData({ 'verticeIndex': index });
         verticeGroup.addObject(vertice);
       });
-      // add group with polygon and it's vertices (markers) on the map
       map.addObject(mainGroup);
 
-      // event listener for main group to show markers if moved in with mouse (or touched on touch devices)
       mainGroup.addEventListener('pointerenter', function (evt)
       {
         if (polygonTimeout)
@@ -963,91 +930,56 @@
           polygonTimeout = null;
         }
 
-        // show vertice markers
         verticeGroup.setVisibility(true);
       }, true);
 
-      // event listener for main group to hide vertice markers if moved out with mouse (or released finger on touch devices)
-      // the vertice markers are hidden on touch devices after specific timeout
       mainGroup.addEventListener('pointerleave', function (evt)
       {
         var timeout = (evt.currentPointer.type == 'touch') ? 1000 : 0;
 
-        // hide vertice markers
         polygonTimeout = setTimeout(function ()
         {
           verticeGroup.setVisibility(false);
         }, timeout);
       }, true);
 
-      // event listener for vertice markers group to change the cursor to pointer
       verticeGroup.addEventListener('pointerenter', function (evt)
       {
         document.body.style.cursor = 'pointer';
       }, true);
 
-      // event listener for vertice markers group to change the cursor to default
       verticeGroup.addEventListener('pointerleave', function (evt)
       {
         document.body.style.cursor = 'default';
       }, true);
 
-      // event listener for vertice markers group to resize the geo polygon object if dragging over markers
       verticeGroup.addEventListener('drag', function (evt)
       {
         var pointer = evt.currentPointer;
         var geoPoint = map.screenToGeo(pointer.viewportX, pointer.viewportY);
         updateVerticePosition(geoPoint, evt, true);
 
-        // stop propagating the drag event, so the map doesn't move
         evt.stopPropagation();
       }, true);
 
-      // return mainGroup;
     }
     function updateVerticePosition(geoPoint, evt, exists)
     {
       var geoLineString = polygon.getGeometry().getExterior();
 
-      // set new position for vertice marker
       evt.target.setGeometry(geoPoint);
 
-      // set new position for polygon's vertice
       if (exists == true)
         geoLineString.removePoint(evt.target.getData()['verticeIndex']);
       geoLineString.insertPoint(evt.target.getData()['verticeIndex'], geoPoint);
       polygon.setGeometry(new H.geo.Polygon(geoLineString));
     }
-    // function removeObstacleAvoidanceRegion()
-    // {
-    //   map.removeObject(mainGroup);
-    // }
-
-    // function createObstacleAvoidanceRegion()
-    // {
-    //   createResizablePolygon(map);
-    // }
 
     var isObstacleAvoidanceRegionVisible = false;
 
     function toggleObstacleAvoidanceRegion()
     {
-      // if (isObstacleAvoidanceRegionVisible)
-      // {
-      // removeObstacleAvoidanceRegion();
-      // removeClickListener();
-
-      // } else
-      // {
       createResizablePolygon(map);
-      // mainGroup = createResizablePolygon(map);
-
-      // createObstacleAvoidanceRegion();
-
-      // setUpClickListener(map);
-
-      // }
-      // isObstacleAvoidanceRegionVisible = !isObstacleAvoidanceRegionVisible;
     }
 
 
@@ -1066,7 +998,6 @@
     {
       const coordinates = [];
 
-      // Extract latitudes and longitudes from the input array
       for (let i = 0; i < inputArray.length; i += 3)
       {
         const lat = inputArray[i];
@@ -1074,7 +1005,6 @@
         coordinates.push({ lat, lng });
       }
 
-      // Create the GeoJSON-like polygon object with a "type" field
       const geoJSONPolygon = {
         type: "polygon",
         inner: coordinates
@@ -1107,11 +1037,8 @@
         {
           console.log("locations.source:", locations.source);
           console.log("locations.destination:", locations.destination);
-          // var source = locations.source.latitude + "," + locations.source.longitude;
           var source = locations.source.longitude + "," + locations.source.latitude;
           var destination = locations.destination.longitude + "," + locations.destination.latitude;
-          // var destination = locations.destination.latitude + "," + locations.destination.longitude;
-          // calculateRoutes(platform, locations.source, locations.destination);
           fetch(`https://api.mapbox.com/directions/v5/mapbox/cycling/${source};${destination}?steps=true&access_token=pk.eyJ1IjoiY3VyaW91c2RldmVsb3BlciIsImEiOiJjbHBxeWxwMmEwNGIxMnJwOHBxcnljcm5uIn0.81dOxnYDrDAFuboiqrftDg`).then(function (response)
           {
             return response.json();
@@ -1146,11 +1073,6 @@
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
 
-    /**
- * A full list of available request parameters can be found in the Routing API documentation.
- * see: https://www.here.com/docs/bundle/routing-api-v8-api-reference/page/index.html#tag/Routing/operation/calculateRoutes
- */
-
     var routes = new H.map.Group();
 
 
@@ -1181,9 +1103,8 @@
       }
       const numericValues = Object.values(newGeoRect)
         .filter(value => typeof value === 'number')
-        .map(value => value.toFixed(8)); // Adjust the precision as needed
+        .map(value => value.toFixed(10));
 
-      // Convert the numeric values to a comma-separated string
       const resultString = numericValues.join(',');
 
       console.log("resultString", resultString);
@@ -1236,11 +1157,6 @@
 
       var router = platform.getRoutingService(null, 8);
 
-      // The blue route showing a simple truck route
-      // calculateRoute(router, routeRequestParams, {
-      //   strokeColor: 'rgba(0, 128, 255, 0.7)',
-      //   lineWidth: 10
-      // });
       var styles = [
         { // blue
           strokeColor: 'rgba(0, 0, 0, .7)',
@@ -1268,29 +1184,6 @@
         }
       ];
       calculateRoute(router, routeRequestParams, styles);
-
-      // // The green route showing a truck route with a trailer
-      // calculateRoute(router, Object.assign(
-      //   routeRequestParams,
-      //   // {
-      //   //   'truck[axleCount]': 4,
-      //   // }
-      // ),
-      //   {
-      //     strokeColor: 'rgba(25, 150, 10, 0.7)',
-      //     lineWidth: 7
-      //   });
-
-      // // The violet route showing a truck route with a trailer
-      // calculateRoute(router, Object.assign(routeRequestParams,
-      //   // {
-      //   //   'truck[axleCount]': 5,
-      //   //   'truck[shippedHazardousGoods]': 'flammable'
-      //   // }
-      // ), {
-      //   strokeColor: 'rgba(255, 0, 255, 0.7)',
-      //   lineWidth: 5
-      // });
     }
 
     var routesDrawn = [];
@@ -1386,14 +1279,10 @@
         });
     }
 
-    // document.getElementById("toggleButton").onclick = toggleGeocode;
     document.getElementById("srcButton").onclick = srcLocation;
     document.getElementById("destButton").onclick = destLocation;
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
     document.getElementById("navigateButton").onclick = navigate;
-    document.getElementById("obstacleStartButton").onclick = startObstacleAvoidanceRegion;
-    document.getElementById("obstacleButton").onclick = toggleObstacleAvoidanceRegion;
-    document.getElementById("getWaypoints").onclick = getWaypoints;
 
 
   </script>
