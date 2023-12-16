@@ -30,6 +30,8 @@
     <!-- <button id="obstacleButton" class="btn btn-primary">Confirm Avoidance Area</button> -->
     <button id="addRectButton">Add Bounds</button>
     <button id="removeRectButton">Remove Bounds</button>
+    <button id="toggleSetBoundRectButton">Toggle set Bounds</button>
+    <button id="toggleSetBoundRectButton2">Toggle set Bounds</button>
     <!-- <button id="getWaypoints">Get Waypoints</button> -->
     <select id="alternatives">
       <option value="0">0</option>
@@ -903,6 +905,8 @@
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     var polygon;
+    var setBounds = false;
+    var setBounds2 = false;
     function createResizablePolygon(map)
     {
       polygon = new H.map.Polygon(
@@ -1208,24 +1212,33 @@
     {
       console.log("params.avoid.areas.bbox", params.avoid.areas.bbox);
       // params.avoid.areas.bbox = "13.014199517385759,80.2429458332888,13.009590266432088,80.23951247036679";
-      params.avoid.areas.bbox = "13.0133557,80.2467978,13.0127298,80.2499788";
+      // params.avoid.areas.bbox = "13.0133557,80.2467978,13.0127298,80.2499788";
+      // params.avoid.areas.bbox = "13.37588,52.51061,13.34226,52.51892";
+      if (setBounds == true)
+      {
+        params.avoid.areas.bbox = "80.2240791635,80.2568169972,13.0024661797,12.9967007159";
+      }
+      if (setBounds2 == true)
+      {
+        params.avoid.areas.bbox = "80.2459495520,80.2496444924,13.0307381059,13.0263024954";
+      }
       var url;
-      // var url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
-      // if (document.getElementById("alternatives").value === 0)
-      // {
-      //   url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
-      // }
+      url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&alternatives=${params.alternatives}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
       if (document.getElementById("alternatives").value == 0)
       {
-        url = `https://router.hereapi.com/v8/routes?origin=52.522297,13.353296&destination=52.508309,13.355633&transportMode=car&avoid[areas]=bbox:13.37588,52.51061,13.34226,52.51892&apikey=${keys.HEREAPIkey}&return=polyline%2CtravelSummary`;
+        url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
       }
+      // if (document.getElementById("alternatives").value == 0)
+      // {
+      //   url = `https://router.hereapi.com/v8/routes?origin=52.522297,13.353296&destination=52.508309,13.355633&transportMode=car&avoid[areas]=bbox:&apikey=${keys.HEREAPIkey}&return=polyline%2CtravelSummary`;
+      // }
       fetch(url).then((result) =>
       { result = result.json(); return result; }).then((result) =>
       {
-        console.log("result:", result);
         if (routesDrawn.length > 0)
         {
           console.log("Removing outesDrawn:", routesDrawn);
+          console.log("Removing outesDrawn.length:", routesDrawn.length);
           for (var i = 0; i < routesDrawn.length; i++)
           {
             console.log("Removing outesDrawn:", i, routesDrawn[i]);
@@ -1234,6 +1247,8 @@
         }
         if (result && result.routes)
         {
+          console.log("result:", result);
+          console.log("result.routes:", result.routes);
           for (var i = 0; i < result.routes.length; i++)
           {
             addRouteShapeToMap(style[i], result.routes[i]);
@@ -1243,6 +1258,19 @@
           console.error('No routes found in the result.');
         }
       }, console.error);
+    }
+
+    function toggleSetBoundRect()
+    {
+      setBounds = !setBounds;
+      this.classList.toggle("toggle-button", setBounds);
+      console.log("setBounds:", setBounds);
+    }
+    function toggleSetBoundRect2()
+    {
+      setBounds2 = !setBounds2;
+      this.classList.toggle("toggle-button", setBounds2);
+      console.log("setBounds2:", setBounds2);
     }
 
 
@@ -1309,9 +1337,19 @@
     document.getElementById("confirmLocationButton").onclick = confirmLocation;
     document.getElementById("navigateButton").onclick = navigate;
     document.getElementById("removeRectButton").onclick = removeRectGroups;
-
+    document.getElementById("toggleSetBoundRectButton").onclick = toggleSetBoundRect;
+    document.getElementById("toggleSetBoundRectButton2").onclick = toggleSetBoundRect2;
 
   </script>
+  <style>
+    .toggle-button {
+      background-color: #ccc;
+    }
+
+    .toggle-button.active {
+      background-color: rgb(0, 234, 255);
+    }
+  </style>
 </body>
 
 </html>
