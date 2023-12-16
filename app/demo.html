@@ -58,21 +58,15 @@
   <div id="map"></div>
 
   <div id="panel"></div>
-  <!-- Copyright notice -->
   <div class="copyright">
     &copy; Mohammed Abdullah 2023. All rights reserved.
   </div>
   <!-- <script type="text/javascript" src='demo.js'></script> -->
   <script type="module">
-    // Import the functions you need from the SDKs you need
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-analytics.js";
     import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc, GeoPoint } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
-    // TODO: Add SDKs for Firebase products that you want to use
-    // https://firebase.google.com/docs/web/setup#available-libraries
 
-    // Your web app's Firebase configuration
-    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
     var keys = {
       HEREAPIkey: "pWeYDWkQb_citdxQIiHestMcjrTwF3M8_QtMkPz657Q",
       firebaseAPIKey: "AIzaSyA3wae6ZSj7TSk1H93kvysUp8bTGetdBh4"
@@ -92,16 +86,6 @@
     const analytics = getAnalytics(app);
     const db = getFirestore(app);
     var fetched_locations = {};
-    /**
-   * Calculates and displays the address details of 200 S Mathilda Ave, Sunnyvale, CA
-   * based on a free-form text
-   *
-   *
-   * A full list of available request parameters can be found in the Geocoder API documentation.
-   * see: https://www.here.com/docs/bundle/geocoding-and-search-api-v7-api-reference/page/index.html#/paths/~1geocode/get
-   *
-   * @param   {H.service.Platform} platform    A stub class to access HERE services
-   */
     function geocode(platform, loc)
     {
       var geocoder = platform.getSearchService();
@@ -116,23 +100,11 @@
         onError
       );
     }
-    /**
-     * This function will be called once the Geocoder REST API provides a response
-     * @param  {Object} result A JSON object representing the location(s) found.
-     * See: https://www.here.com/docs/bundle/geocoding-and-search-api-v7-api-reference/page/index.html#/paths/~1geocode/get
-     */
     function onSuccess(result)
     {
       var locations = result.items;
-      /*
-       * The styling of the geocoding response on the map is entirely under the developer's control.
-       * A representitive styling can be found the full JS + HTML code of this example
-       * in the functions below:
-       */
       addLocationsToMap(locations);
       addLocationsToPanel(locations);
-      // log_data();
-      // ... etc.
     }
 
     async function log_data()
@@ -145,54 +117,32 @@
       });
     }
 
-    /**
-     * This function will be called if a communication error occurs during the JSON-P request
-     * @param  {Object} error  The error message received.
-     */
     function onError(error)
     {
       alert('Can\'t reach the remote server');
     }
 
-    /**
-     * Boilerplate map initialization code starts below:
-     */
-
-    //Step 1: initialize communication with the platform
-    // In your own code, replace variable window.apikey with your own apikey
     var platform = new H.service.Platform({
       apikey: keys.HEREAPIkey
     });
     var defaultLayers = platform.createDefaultLayers();
 
-    //Step 2: initialize a map - this map is centered over California
     var map = new H.Map(document.getElementById('map'),
       defaultLayers.vector.normal.map, {
       center: { lat: 13.0070665, lng: 80.2558377 },
       zoom: 15,
       pixelRatio: window.devicePixelRatio || 1
     });
-    // add a resize listener to make sure that the map occupies the whole container
     window.addEventListener('resize', () => map.getViewPort().resize());
 
     var locationsContainer = document.getElementById('panel');
 
-    //Step 3: make the map interactive
-    // MapEvents enables the event system
-    // Behavior implements default interactions for pan/zoom (also on mobile touch environments)
     var behavior = new H.mapevents.Behavior(new H.mapevents.MapEvents(map));
 
-    // Create the default UI components
     var ui = H.ui.UI.createDefault(map, defaultLayers);
 
-    // Hold a reference to any infobubble opened
     var bubble;
 
-    /**
-     * Opens/Closes a infobubble
-     * @param  {H.geo.Point} position     The location on the map.
-     * @param  {String} text              The contents of the infobubble.
-     */
     function openBubble(position, text)
     {
       if (!bubble)
@@ -433,7 +383,6 @@
       var confirmation = confirm("Do you want to confirm this location?\n\n" + confirm_location);
       if (confirm_location)
       {
-        // User confirmed the location, do something...
         console.log("Location confirmed:", confirm_location);
         var index = confirm_location.split(",");
         var L_position = {
@@ -472,104 +421,6 @@
 
 
 
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*-------------------------------------------------Clickable Nature Obstacle Avoidance------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-
-
-    /**
-     * An event listener is added to listen to tap events on the map.
-     * Clicking on the map displays an alert box containing the latitude and longitude
-     * of the location pressed.
-     * @param  {H.Map} map      A HERE Map instance within the application
-     */
-    // Helper for logging events
-    var vertices = [];
-    var logContainer;
-    var result;
-    // var mainGroup;
-    // Step 4: create custom logging facilities
-    function createLogContainer(map)
-    {
-      logContainer = document.createElement('ul');
-      logContainer.id = 'log-container';
-      logContainer.className = 'log';
-      logContainer.innerHTML = '<li class="log-entry">Try clicking on the map</li>';
-      map.getElement().appendChild(logContainer);
-    }
-    function removeLogContainer(map)
-    {
-      logContainer = document.getElementById('log-container');
-      if (logContainer)
-      {
-        map.getElement().removeChild(logContainer);
-      }
-    }
-    function logEvent(str)
-    {
-      var entry = document.createElement('li');
-      entry.className = 'log-entry';
-      entry.textContent = str;
-      logContainer.insertBefore(entry, logContainer.firstChild);
-    }
-
-    function setUpClickListener(map)
-    {
-      createLogContainer(map);
-
-      map.addEventListener('tap', function (evt)
-      {
-        var coord = map.screenToGeo(evt.currentPointer.viewportX,
-          evt.currentPointer.viewportY);
-        vertices.push(coord.lat, coord.lng, 0);
-        console.log("vertices:", vertices);
-        // removeObstacleAvoidanceRegion();
-        // updateVerticePosition(coord, evt, false);
-        // createResizablePolygon(map);
-        logEvent('Clicked at ' + Math.abs(coord.lat.toFixed(4)) +
-          ((coord.lat > 0) ? 'N' : 'S') +
-          ' ' + Math.abs(coord.lng.toFixed(4)) +
-          ((coord.lng > 0) ? 'E' : 'W'));
-      });
-    }
-
-    function removeClickListener()
-    {
-      // map.removeEventListener('tap');
-      removeLogContainer(map);
-    }
-
-
-
-
-    function undoLastLogEntry()
-    {
-      var logEntries = document.querySelectorAll('.log-entry');
-      if (logEntries.length > 0)
-      {
-        var lastLogEntry = logEntries[0];
-        vertices.pop();
-        lastLogEntry.parentNode.removeChild(lastLogEntry);
-      }
-    }
-
-
-
-
-
-
-    function startObstacleAvoidanceRegion()
-    {
-      setUpClickListener(map);
-    }
-
-
-
-
-
-
 
     /*------------------------------------------------------------------------------------------------------------------------------------- */
     /*------------------------------------------------------------------------------------------------------------------------------------- */
@@ -578,7 +429,6 @@
     /*------------------------------------------------------------------------------------------------------------------------------------- */
 
 
-    // ... (Your existing code)
 
     var pointer,
       pointerGeoPoint,
@@ -589,14 +439,11 @@
       RectGroups = [],
       areas = [];
 
-    // Add an event listener to the button
     document.getElementById('addRectButton').addEventListener('click', function ()
     {
-      // Function to add a new resizable rectangle to the map
       addResizableRect(map, behavior);
     });
 
-    // Function to add a resizable rectangle to the map
     function addResizableRect(map, behavior)
     {
       // Set initial location near the center of the map
@@ -608,9 +455,6 @@
           map.getCenter().lng + 0.001
         );
 
-      // ... (The rest of your existing code for creating the resizable rectangle)
-
-      // Add the new resizable rectangle to the map
       createResizableRect(map, behavior, initialRect);
     }
 
@@ -644,7 +488,7 @@
           }
         ),
         rectGroup = new H.map.Group({
-          volatility: true, // mark the group as volatile for smooth dragging of all it's objects
+          volatility: true,
           objects: [rect, rectOutline]
         }),
         rectTimeout;
@@ -652,18 +496,12 @@
       RectGroups.push(rectGroup);
 
 
-      // ensure that the objects can receive drag events
       rect.draggable = true;
       rectOutline.draggable = true;
-
-      // extract first point of the rect's outline polyline's LineString and
-      // push it to the end, so the outline has a closed geometry
       rectOutline.getGeometry().pushPoint(rectOutline.getGeometry().extractPoint(0));
 
-      // add group with rect and it's outline (polyline)
       map.addObject(rectGroup);
 
-      // event listener for rectangle group to show outline (polyline) if moved in with mouse (or touched on touch devices)
       rectGroup.addEventListener('pointerenter', function (evt)
       {
         var currentStyle = rectOutline.getStyle(),
@@ -676,12 +514,9 @@
           clearTimeout(rectTimeout);
           rectTimeout = null;
         }
-        // show outline
         rectOutline.setStyle(newStyle);
       }, true);
 
-      // event listener for rectangle group to hide outline if moved out with mouse (or released finger on touch devices)
-      // the outline is hidden on touch devices after specific timeout
       rectGroup.addEventListener('pointerleave', function (evt)
       {
         var currentStyle = rectOutline.getStyle(),
@@ -881,21 +716,8 @@
     /*------------------------------------------------------------------------------------------------------------------------------------- */
 
     var points = [];
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    var vertices = [];
+    var result;
 
 
 
@@ -1032,42 +854,6 @@
       };
 
       return geoJSONPolygon;
-    }
-
-
-
-
-
-
-
-
-
-
-
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*-------------------------------------------------Calculate Route--------------------------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-    /*------------------------------------------------------------------------------------------------------------------------------------- */
-
-    async function getWaypoints()
-    {
-      console.log("Getting Waypoints...");
-      await fetchLocationsFromFirebase().
-        then((locations) =>
-        {
-          console.log("locations.source:", locations.source);
-          console.log("locations.destination:", locations.destination);
-          var source = locations.source.longitude + "," + locations.source.latitude;
-          var destination = locations.destination.longitude + "," + locations.destination.latitude;
-          fetch(`https://api.mapbox.com/directions/v5/mapbox/cycling/${source};${destination}?steps=true&access_token=pk.eyJ1IjoiY3VyaW91c2RldmVsb3BlciIsImEiOiJjbHBxeWxwMmEwNGIxMnJwOHBxcnljcm5uIn0.81dOxnYDrDAFuboiqrftDg`).then(function (response)
-          {
-            return response.json();
-          }).then(function (json)
-          {
-            console.log(json);
-          });
-        });
     }
 
 
