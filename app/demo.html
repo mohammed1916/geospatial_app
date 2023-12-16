@@ -944,12 +944,31 @@
       setBounds = !setBounds;
       this.classList.toggle("toggle-button", setBounds);
       console.log("setBounds:", setBounds);
+      var initialRect =
+        new H.geo.Rect(
+          13.0024661797,
+          80.2240791635,
+          12.9967007159,
+          80.2568169972
+        );
+
+      createResizableRect(map, behavior, initialRect);
     }
     function toggleSetBoundRect2()
     {
       setBounds2 = !setBounds2;
       this.classList.toggle("toggle-button", setBounds2);
       console.log("setBounds2:", setBounds2);
+
+      var initialRect =
+        new H.geo.Rect(
+          13.0307381059,
+          80.2459495520,
+          13.0263024954,
+          80.2496444924
+        );
+
+      createResizableRect(map, behavior, initialRect);
     }
 
 
