@@ -822,42 +822,15 @@ function addRouteShapeToMap(style, route)
 }
 
 
-async function fetchLocationsFromFirebase()
-{
-    try
-    {
-        var sourceDocRef = doc(collection(db, "userlocation"), "source");
-        var sourceDocSnap = await getDoc(sourceDocRef);
-        var sourceLocation = sourceDocSnap.data().location;
 
-        var destinationDocRef = doc(collection(db, "userlocation"), "destination");
-        var destinationDocSnap = await getDoc(destinationDocRef);
-        var destinationLocation = destinationDocSnap.data().location;
 
-        return { source: sourceLocation, destination: destinationLocation };
 
-    } catch (error)
-    {
-        console.error("Error fetching locations from Firestore:", error);
-    }
-}
-
-async function navigate()
-{
-    console.log("Navigating...");
-    await fetchLocationsFromFirebase().
-        then((locations) =>
-        {
-            console.log("locations.source:", locations.source);
-            console.log("locations.destination:", locations.destination);
-            calculateRoutes(platform, locations.source, locations.destination);
-        });
-}
 
 document.getElementById("srcButton").onclick = srcLocation;
 document.getElementById("destButton").onclick = destLocation;
 document.getElementById("confirmLocationButton").onclick = confirmLocation;
-document.getElementById("navigateButton").onclick = navigate;
 document.getElementById("removeRectButton").onclick = removeRectGroups;
 document.getElementById("toggleSetBoundRectButton").onclick = toggleSetBoundRect;
 document.getElementById("toggleSetBoundRectButton2").onclick = toggleSetBoundRect2;
+
+export default { db, platform, calculateRoutes, fetched_locations };
