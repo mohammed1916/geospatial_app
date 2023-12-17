@@ -42,15 +42,7 @@ function onSuccess(result)
     addLocationsToPanel(locations);
 }
 
-async function log_data()
-{
-    // Retrieve documents from Firestore collection "/userlocations"
-    const querySnapshot = await getDocs(collection(db, "userlocations"));
-    querySnapshot.forEach((doc) =>
-    {
-        console.log(doc.id, " => ", doc.data());
-    });
-}
+
 
 function onError(error)
 {
@@ -102,26 +94,6 @@ async function storeInFirestore(i, address, position)
     var docRef = doc(collectionRef, "marker");
     var docSnapshot = await getDoc(docRef);
 
-    // if (docSnapshot.exists())
-    // {
-    //   console.log("Document already exists. Deleting insertion.");
-    //   await deleteDoc(docRef);
-    //   return;
-    // }
-    // var collectionRef = collection(db, "userlocations/route", index);
-    // var collectionSnapshot = await getDocs(collectionRef);
-    // if (!collectionSnapshot.empty)
-    // {
-    //   console.log("Collection already exists. Skipping insertion.");
-    //   return;
-    // }
-
-    // Store the content in Firestore
-    // current = isSrc ? "source" : "destination";
-
-    // var path = "userlocations/";
-    // var docRef = doc(collection(db, path));
-
     var firestore_content = {
         houseNumber: address.houseNumber,
         street: address.street,
@@ -164,11 +136,7 @@ function generateLocationContent(address, position)
 
     return content;
 }
-/**
- * Creates a series of list items for each location found, and adds it to the panel.
- * @param {Object[]} locations An array of locations as received from the
- *                             H.service.GeocodingService
- */
+
 function addLocationsToPanel(locations)
 {
 
@@ -204,12 +172,6 @@ function addLocationsToPanel(locations)
         button.appendChild(li);
         button.addEventListener('click', function (evt)
         {
-            // var allButtons = document.querySelectorAll('[data-selected="true"]');
-            // allButtons.forEach(function (btn) {
-            //   btn.classList.remove('selected');
-            // });
-
-            // Remove 'selected' class from the previously selected button
             let lastSelectedButton = document.querySelector('.selected');
             if (lastSelectedButton)
             {
@@ -218,9 +180,7 @@ function addLocationsToPanel(locations)
                 lastSelectedButton.dataset.selected = "false";
             }
 
-            // Add 'selected' class to the clicked button
             this.classList.add('selected');
-            // button.dataset.selected = "true";
             console.log(evt.target.innerHTML);
             console.log(location.position);
             map.setCenter(location.position);
@@ -232,19 +192,12 @@ function addLocationsToPanel(locations)
     locationsContainer.appendChild(nodeOL);
 }
 
-
-/**
- * Creates a series of H.map.Markers for each location found, and adds it to the map.
- * @param {Object[]} locations An array of locations as received from the
- *                             H.service.GeocodingService
- */
 function addLocationsToMap(locations)
 {
     var group = new H.map.Group(),
         position,
         i;
 
-    // Add a marker for each location found
     for (i = 0; i < locations.length; i += 1)
     {
         let location = locations[i];
@@ -260,32 +213,11 @@ function addLocationsToMap(locations)
             evt.target.getGeometry(), evt.target.label);
     }, false);
 
-    // Add the locations group to the map
     map.addObject(group);
     map.setCenter(group.getBoundingBox().getCenter());
 }
 
-// var geocodingEnabled = false;
 
-// function toggleGeocode()
-// {
-//   // Get the toggle button element
-//   var toggleButton = document.getElementById('toggleButton');
-
-//   // Check if geocoding is currently enabled
-//   if (geocodingEnabled)
-//   {
-//     // Disable geocoding
-//     geocodingEnabled = false;
-//     toggleButton.innerHTML = 'Enable Geocode';
-//   } else
-//   {
-//     // Enable geocoding
-//     geocodingEnabled = true;
-//     toggleButton.innerHTML = 'Disable Geocode';
-//     geocode(platform);
-//   }
-// }
 var selected_location = ["source", "destination"];
 var isSrc = 0;
 function srcLocation()
@@ -305,11 +237,9 @@ async function confirmLocation()
     var selectedButton = document.querySelector('.selected');
     if (selectedButton)
     {
-        // Button with class "selected" found, do something...
         console.log("Selected location:", selectedButton.id);
     } else
     {
-        // Button with class "selected" not found
         console.log("No location selected");
         return;
     }
@@ -327,13 +257,10 @@ async function confirmLocation()
         var geoPoint = new GeoPoint(L_position.lat, L_position.lng);
 
 
-        // Insert source location into Firestore
-        // var path = "userlocations/" + selected_location[isSrc];
         console.log("selected_location[isSrc]:", selected_location[isSrc]);
         var collectionRef = collection(db, "userlocation");
         var docRef = doc(collectionRef, selected_location[isSrc]);
 
-        // var docRef = doc(collection(db, path, confirm_location));
         await setDoc(docRef, { location: geoPoint }, { merge: true })
             .then(function ()
             {
@@ -345,7 +272,6 @@ async function confirmLocation()
             });
     } else
     {
-        // User canceled the location confirmation
         console.log("Location confirmation canceled");
     }
 }
@@ -381,7 +307,6 @@ document.getElementById('addRectButton').addEventListener('click', function ()
 
 function addResizableRect(map, behavior)
 {
-    // Set initial location near the center of the map
     var initialRect =
         new H.geo.Rect(
             map.getCenter().lat - 0.001,
@@ -406,11 +331,6 @@ function removeRectGroups()
 function createResizableRect(map, behavior, initialRect)
 {
     var rect = new H.map.Rect(
-        // new H.geo.Rect(
-        //   13.01378488503507,
-        //   80.23368260925976,
-        //   13.00940761197399,
-        //   80.23942748389136),
         initialRect,
         {
             style: { fillColor: 'rgba(100, 100, 100, 0.5)', lineWidth: 0 }
@@ -483,19 +403,19 @@ function createResizableRect(map, behavior, initialRect)
 
         if (pointer.viewportX < (objectTopLeftScreen.x + 4))
         {
-            document.body.style.cursor = 'ew-resize'; // mouse position is at left side
+            document.body.style.cursor = 'ew-resize';
             draggingType = 'left';
         } else if (pointer.viewportX > (objectBottomRightScreen.x - 4))
         {
-            document.body.style.cursor = 'ew-resize'; // mouse position is at right side
+            document.body.style.cursor = 'ew-resize';
             draggingType = 'right';
         } else if (pointer.viewportY < (objectTopLeftScreen.y + 4))
         {
-            document.body.style.cursor = 'ns-resize'; // mouse position is at top side
+            document.body.style.cursor = 'ns-resize';
             draggingType = 'top';
         } else if (pointer.viewportY > (objectBottomRightScreen.y - 4))
         {
-            document.body.style.cursor = 'ns-resize'; // mouse position is at the bottom side
+            document.body.style.cursor = 'ns-resize';
             draggingType = 'bottom';
         } else
         {
@@ -517,11 +437,11 @@ function createResizableRect(map, behavior, initialRect)
         {
             if (pointer.viewportY < (objectTopLeftScreen.y + 4))
             {
-                document.body.style.cursor = 'nesw-resize'; // mouse position is at the top-right corner
+                document.body.style.cursor = 'nesw-resize';
                 draggingType = 'right-top';
             } else if (pointer.viewportY > (objectBottomRightScreen.y - 4))
             {
-                document.body.style.cursor = 'nwse-resize'; // mouse position is at the bottom-right corner
+                document.body.style.cursor = 'nwse-resize';
                 draggingType = 'right-bottom';
             }
         }
@@ -623,7 +543,6 @@ function createResizableRect(map, behavior, initialRect)
 
             outlineLinestring = rect.getGeometry().getExterior();
             outlineLinestring.pushPoint(outlineLinestring.extractPoint(0));
-            // console.log("outlineLinestring:", outlineLinestring);
             rectOutline.setGeometry(outlineLinestring);
             console.log("rectOutline:", rectOutline);
 
@@ -760,29 +679,6 @@ async function calculateRoutes(platform, source, destination)
             'avoid': {
                 areas: { bbox: resultString }
             },
-            // areas: { bbox: '13.01044,80.23368,13.01312,80.23919' }
-            //     avoid: {areas:
-            // {      bbox: [
-            //         13.01044,
-            //         80.23368,
-            //         13.01312,
-            //         80.23919]}
-            //     },
-            // avoid: [13.01378488503507, 13.00940761197399, 80.23368260925976, 80.23942748389136],
-            // avoid: {
-            //   "areas": [{
-            //     "type": "boundingBox",
-            //     "north": 13.01378488503507,
-            //     "south": 13.00940761197399,
-            //     "east": 80.23368260925976,
-            //     "west": 80.23942748389136
-            //   }]
-            // },
-            // avoidareas: "13.010447702993071,80.23368260925976;13.00940761197399,80.23942748389136;13.013127932755168,80.23919067286062;13.01378488503507,80.23384638681429;",
-            // avoidareas: [13.010447702993071, 80.23368260925976,
-            //   13.00940761197399, 80.23942748389136,
-            //   13.013127932755168, 80.23919067286062,
-            //   13.01378488503507, 80.23384638681429],
 
             'units': 'metric',
             'return': 'polyline,travelSummary',
@@ -825,9 +721,6 @@ var routesDrawn = [];
 function calculateRoute(router, params, style)
 {
     console.log("params.avoid.areas.bbox", params.avoid.areas.bbox);
-    // params.avoid.areas.bbox = "13.014199517385759,80.2429458332888,13.009590266432088,80.23951247036679";
-    // params.avoid.areas.bbox = "13.0133557,80.2467978,13.0127298,80.2499788";
-    // params.avoid.areas.bbox = "13.37588,52.51061,13.34226,52.51892";
     if (setBounds == true)
     {
         params.avoid.areas.bbox = "80.2240791635,80.2568169972,13.0024661797,12.9967007159";
@@ -842,10 +735,6 @@ function calculateRoute(router, params, style)
     {
         url = `https://router.hereapi.com/v8/routes?apikey=${keys.HEREAPIkey}&transportMode=${params.transportMode}&origin=${params.origin}&destination=${params.destination}&avoid[areas]=bbox:${params.avoid.areas.bbox}&units=metric&return=polyline%2CtravelSummary`;
     }
-    // if (document.getElementById("alternatives").value == 0)
-    // {
-    //   url = `https://router.hereapi.com/v8/routes?origin=52.522297,13.353296&destination=52.508309,13.355633&transportMode=car&avoid[areas]=bbox:&apikey=${keys.HEREAPIkey}&return=polyline%2CtravelSummary`;
-    // }
     fetch(url).then((result) =>
     { result = result.json(); return result; }).then((result) =>
     {
