@@ -1,7 +1,7 @@
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, deleteDoc, GeoPoint } from "https://www.gstatic.com/firebasejs/10.6.0/firebase-firestore.js";
 
 import handler from "./demo.js";
-import calculateRoutes from "./demo.js";
+import calculateRoutes from "./calculate_routes.js";
 
 
 async function fetchLocationsFromFirebase()
@@ -35,7 +35,7 @@ async function navigate()
         {
             console.log("locations.source:", locations.source);
             console.log("locations.destination:", locations.destination);
-            handler.calculateRoutes(handler.platform, locations.source, locations.destination);
+            calculateRoutes.calculateRoutes(handler.platform, locations.source, locations.destination);
         });
 }
 

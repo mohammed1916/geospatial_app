@@ -300,6 +300,11 @@ var pointer,
     RectGroups = [],
     areas = [];
 
+function getNewGeoRect()
+{
+    return newGeoRect;
+}
+
 document.getElementById('addRectButton').addEventListener('click', function ()
 {
     addResizableRect(map, behavior);
@@ -563,63 +568,6 @@ function createResizableRect(map, behavior, initialRect)
 
 
 
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*-------------------------------------------------Add points------------------------------------------------------------------ */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-
-var points = [];
-var vertices = [];
-var result;
-var setBounds = false;
-var setBounds2 = false;
-
-
-
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*-------------------------------------------------Encoding --------------------------------------------------------------------- */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-/*------------------------------------------------------------------------------------------------------------------------------------- */
-
-
-function convertToGeoJSON(inputArray)
-{
-    const coordinates = [];
-
-    for (let i = 0; i < inputArray.length; i += 3)
-    {
-        const lat = inputArray[i];
-        const lng = inputArray[i + 1];
-        coordinates.push({ lat, lng });
-    }
-
-    const geoJSONPolygon = {
-        type: "polygon",
-        inner: coordinates
-    };
-
-    return geoJSONPolygon;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*------------------------------------------------------------------------------------------------------------------------------------- */
 /*------------------------------------------------------------------------------------------------------------------------------------- */
@@ -627,95 +575,14 @@ function convertToGeoJSON(inputArray)
 /*------------------------------------------------------------------------------------------------------------------------------------- */
 /*------------------------------------------------------------------------------------------------------------------------------------- */
 
+
+var setBounds = false;
+var setBounds2 = false;
+
 var routes = new H.map.Group();
 
 
-async function calculateRoutes(platform, source, destination)
-{
-    result = await convertToGeoJSON(vertices);
-    var source = source.latitude + "," + source.longitude;
-    var destination = destination.latitude + "," + destination.longitude;
 
-    const TransportMode = {
-        CAR: 'car',
-        TRUCK: 'truck',
-        PEDESTRIAN: 'pedestrian',
-        BICYCLE: 'bicycle',
-        SCOOTER: 'scooter',
-        TAXI: 'taxi',
-        BUS: 'bus',
-        PRIVATE_BUS: 'privateBus'
-    };
-
-    var transportModeSelect = document.getElementById("transportModeSelect");
-    var selectedTransportMode = transportModeSelect.value;
-
-    if (newGeoRect == undefined)
-    {
-        alert("Please select a region to avoid");
-        return;
-    }
-    const numericValues = Object.values(newGeoRect)
-        .filter(value => typeof value === 'number')
-        .map(value => value.toFixed(10));
-
-    const resultString = numericValues.join(',');
-
-    console.log("resultString", resultString);
-
-
-
-
-    if (selectedTransportMode === "")
-    {
-        alert("Please select a transport mode");
-    } else
-    {
-        var routeRequestParams = {
-            'transportMode': selectedTransportMode,
-            'origin': source,
-            'destination': destination,
-            'alternatives': document.getElementById("alternatives").value,
-            'avoid': {
-                areas: { bbox: resultString }
-            },
-
-            'units': 'metric',
-            'return': 'polyline,travelSummary',
-        };
-    }
-    console.log("routeRequestParams:", routeRequestParams);
-
-    var router = platform.getRoutingService(null, 8);
-
-    var styles = [
-        { // blue
-            strokeColor: 'rgba(0, 0, 0, .7)',
-            lineWidth: 10
-        },
-        {// pink
-            strokeColor: 'rgba(0, 255, 0, .7)',
-            lineWidth: 7
-        },
-        {// green
-            strokeColor: 'rgba(25, 150, 10, 0.5)',
-            lineWidth: 5
-        },
-        {// Red
-            strokeColor: 'rgba(255, 0, 0, 0.7)',
-            lineWidth: 6
-        },
-        {// cyan
-            strokeColor: 'rgba(0, 255, 255, 0.7)',
-            lineWidth: 9
-        },
-        {// yellow
-            strokeColor: 'rgba(255, 255, 0, 0.7)',
-            lineWidth: 11
-        }
-    ];
-    calculateRoute(router, routeRequestParams, styles);
-}
 
 var routesDrawn = [];
 function calculateRoute(router, params, style)
@@ -833,4 +700,4 @@ document.getElementById("removeRectButton").onclick = removeRectGroups;
 document.getElementById("toggleSetBoundRectButton").onclick = toggleSetBoundRect;
 document.getElementById("toggleSetBoundRectButton2").onclick = toggleSetBoundRect2;
 
-export default { db, platform, calculateRoutes, fetched_locations };
+export default { db, platform, calculateRoute, getNewGeoRect, fetched_locations };
